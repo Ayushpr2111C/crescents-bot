@@ -154,16 +154,20 @@ class Economy(commands.Cog):
 
             if messages % 100 == 0:
 
+                reward = 100
+
                 await db.execute(
                     """
                     UPDATE users
-                    SET coins = coins + 100
+                    SET coins = coins + ?
                     WHERE user_id = ?
                     """,
-                    (message.author.id,)
+                    (reward, message.author.id)
                 )
 
-            await db.commit()
+                await message.channel.send(
+                    f"🎉 {message.author.mention} has reached **{messages} messages** and earned **{reward} coins!** 💰"
+                )
 
     @app_commands.command(name="profile", description="View your profile")
     async def profile(self, interaction: discord.Interaction):
