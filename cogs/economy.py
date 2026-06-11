@@ -200,5 +200,37 @@ class Economy(commands.Cog):
 
             await interaction.response.send_message(embed=embed)
 
+    @app_commands.command(name="shop", description="View the server shop")
+    async def shop(self, interaction: discord.Interaction):
+
+        embed = discord.Embed(
+            title="🛒 Crescent Shop",
+            color=discord.Color.gold()
+        )
+
+        embed.add_field(
+            name="🎞️ GIF Permission",
+            value="100 Coins",
+            inline=False
+        )
+
+        embed.add_field(
+            name="🎨 Custom Role Color",
+            value="200 Coins",
+            inline=False
+        )
+
+        embed.add_field(
+            name="🏷️ Server Tag",
+            value="300 Coins",
+            inline=False
+        )
+
+        embed.set_footer(
+            text="Use /buy <item> to purchase an item"
+        )
+
+        await interaction.response.send_message(embed=embed)
+
 async def setup(bot):
     await bot.add_cog(Economy(bot))
