@@ -3,6 +3,163 @@ from discord.ext import commands
 from discord import app_commands
 import aiosqlite
 from datetime import datetime, timedelta
+import asyncio
+from discord.ui import View, Select
+
+GIF_ROLE_ID =1514647359445799072
+
+class ShopDropdown(Select):
+    def __init__(self):
+
+        options = [
+            discord.SelectOption(
+                label="GIF Permission",
+                emoji="🎞️",
+                description="100 Coins"
+            ),
+            discord.SelectOption(
+                label="Server Tag",
+                emoji="🏷️",
+                description="500 Coins"
+            ),
+            discord.SelectOption(
+                label="Color Roles",
+                emoji="🎨",
+                description="600-1000 Coins"
+            )
+        ]
+
+        super().__init__(
+            placeholder="Select an item...",
+            options=options
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+
+        if self.values[0] == "GIF Permission":
+
+            cog = interaction.client.get_cog("Economy")
+
+            user = await cog.get_user(interaction.user.id)
+
+            if user[1] < 100:
+                await interaction.response.send_message(
+                    "❌ You need 100 coins to buy GIF Permission.",
+                    ephemeral=True
+                )
+                return
+
+            role = interaction.guild.get_role(GIF_ROLE_ID)
+
+            if role is None:
+                await interaction.response.send_message(
+                    "❌ GIF role not found.",
+                    ephemeral=True
+                )
+                return
+
+            if role in interaction.user.roles:
+                await interaction.response.send_message(
+                    "❌ You already have GIF Permission.",
+                    ephemeral=True
+                )
+                return
+
+            await cog.add_coins(interaction.user.id, -100)
+
+            await interaction.user.add_roles(role)
+
+            await interaction.response.send_message(
+                "🎞️ GIF Permission activated for 2 minutes!",
+                ephemeral=True
+            )
+
+            await asyncio.sleep(120)
+
+            await interaction.user.remove_roles(role)
+
+
+        elif self.values[0] == "Server Tag":
+
+            await interaction.response.send_modal(
+                TagModal()
+            )
+
+        elif self.values[0] == "Color Roles":
+
+            await interaction.response.send_message(
+                "🎨 Color Roles selected.\nCost: 600-1000 Coins",
+                ephemeral=True
+            )
+
+
+class ShopView(View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.add_item(ShopDropdown())
+
+class TagModal(discord.ui.Modal, title="Create Server Tag"):
+
+    tag = discord.ui.TextInput(
+        label="Enter a 4-letter tag",
+        placeholder="GOAT",
+        min_length=4,
+        max_length=4
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+
+        tag = self.tag.value.upper()
+
+        cog = interaction.client.get_cog("Economy")
+
+        user = await cog.get_user(interaction.user.id)
+
+        if user[1] < 500:
+            await interaction.response.send_message(
+                "❌ You need 500 coins.",
+                ephemeral=True
+            )
+            return
+
+        try:
+
+            old_name = interaction.user.display_name
+
+            await cog.add_coins(
+                interaction.user.id,
+                -500
+            )
+
+            await interaction.user.edit(
+                nick=f"[{tag}] {old_name}"
+            )
+
+            await interaction.response.send_message(
+                f"✅ Tag **{tag}** activated for 4 hours!",
+                ephemeral=True
+            )
+
+            await asyncio.sleep(20)
+            try:
+                current_name = interaction.user.display_name
+
+                if current_name.startswith(f"[{tag}] "):
+                    new_name = current_name[7:]
+
+                    await interaction.user.edit(
+                        nick=new_name
+                    )
+
+            except:
+                pass
+            
+        except discord.Forbidden:
+
+            await interaction.response.send_message(
+                "❌ I don't have permission to change nicknames.",
+                ephemeral=True
+            )
 
 class Economy(commands.Cog):
     def __init__(self, bot):
@@ -203,38 +360,36 @@ class Economy(commands.Cog):
             )
 
             await interaction.response.send_message(embed=embed)
-
     @app_commands.command(name="shop", description="View the server shop")
     async def shop(self, interaction: discord.Interaction):
 
         embed = discord.Embed(
             title="🛒 Crescent Shop",
+            description="Select an item below.",
             color=discord.Color.gold()
         )
 
         embed.add_field(
             name="🎞️ GIF Permission",
-            value="100 Coins",
-            inline=False
-        )
-
-        embed.add_field(
-            name="🎨 Custom Role Color",
-            value="200 Coins",
+            value="100 Coins | 2 Minutes",
             inline=False
         )
 
         embed.add_field(
             name="🏷️ Server Tag",
-            value="300 Coins",
+            value="500 Coins | 4 Hours",
             inline=False
         )
 
-        embed.set_footer(
-            text="Use /buy <item> to purchase an item"
+        embed.add_field(
+            name="🎨 Color Roles",
+            value="600-1000 Coins | 24 Hours",
+            inline=False
         )
 
-        await interaction.response.send_message(embed=embed)
-
+        await interaction.response.send_message(
+            embed=embed,
+            view=ShopView()
+        )
 async def setup(bot):
     await bot.add_cog(Economy(bot))
