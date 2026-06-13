@@ -140,20 +140,23 @@ class TagModal(discord.ui.Modal, title="Create Server Tag"):
                 ephemeral=True
             )
 
+            member = interaction.guild.get_member(interaction.user.id)
+
             await asyncio.sleep(20)
+
             try:
-                current_name = interaction.user.display_name
 
-                if current_name.startswith(f"[{tag}] "):
-                    new_name = current_name[7:]
+                if member.nick and member.nick.startswith(f"[{tag}] "):
 
-                    await interaction.user.edit(
-                        nick=new_name
+                    original_name = member.nick[len(f"[{tag}] "):]
+
+                    await member.edit(
+                        nick=original_name
                     )
 
-            except:
-                pass
-            
+            except Exception as e:
+                print(e)
+
         except discord.Forbidden:
 
             await interaction.response.send_message(
@@ -287,6 +290,7 @@ class Economy(commands.Cog):
 
             await self.get_user(message.author.id)
 
+            # Increase message count
             await db.execute(
                 """
                 UPDATE users
@@ -296,6 +300,10 @@ class Economy(commands.Cog):
                 (message.author.id,)
             )
 
+            # IMPORTANT: Save the update first
+            await db.commit()
+
+            # Get updated message count
             cursor = await db.execute(
                 """
                 SELECT messages
@@ -309,6 +317,7 @@ class Economy(commands.Cog):
 
             messages = data[0]
 
+            # Reward every 100 messages
             if messages % 100 == 0:
 
                 reward = 100
@@ -322,10 +331,12 @@ class Economy(commands.Cog):
                     (reward, message.author.id)
                 )
 
+                await db.commit()
+
                 await message.channel.send(
                     f"🎉 {message.author.mention} has reached **{messages} messages** and earned **{reward} coins!** 💰"
                 )
-
+                
     @app_commands.command(name="profile", description="View your profile")
     async def profile(self, interaction: discord.Interaction):
 
