@@ -5,7 +5,12 @@ import aiosqlite
 from datetime import datetime, timedelta
 import asyncio
 from discord.ui import View, Select
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
+
+OWNER_ID = int(os.getenv("OWNER_ID"))
 GIF_ROLE_ID =1514647359445799072
 
 class ShopDropdown(Select):
@@ -175,6 +180,28 @@ class Economy(commands.Cog):
                 (amount, user_id)
             )
             await db.commit()
+
+    @app_commands.command(name="addcoins", description="Add coins")
+    async def addcoins(
+        self,
+        interaction: discord.Interaction,
+        member: discord.Member,
+        amount: int
+    ):
+
+        if interaction.user.id != OWNER_ID:
+            await interaction.response.send_message(
+                "❌ Owner only command.",
+                ephemeral=True
+            )
+            return
+
+        await self.get_user(member.id)
+        await self.add_coins(member.id, amount)
+
+        await interaction.response.send_message(
+            f"✅ Added {amount} coins to {member.mention}"
+        )
 
     async def create_table(self):
         async with aiosqlite.connect("economy.db") as db:
