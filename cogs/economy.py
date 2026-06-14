@@ -108,7 +108,7 @@ class TagModal(discord.ui.Modal, title="Create Server Tag"):
     tag = discord.ui.TextInput(
         label="Enter a 4-letter tag",
         placeholder="GOAT",
-        min_length=4,
+        min_length=3,
         max_length=4
     )
 
@@ -147,7 +147,7 @@ class TagModal(discord.ui.Modal, title="Create Server Tag"):
 
             member = interaction.guild.get_member(interaction.user.id)
 
-            await asyncio.sleep(20)
+            await asyncio.sleep(14400)
 
             try:
 
