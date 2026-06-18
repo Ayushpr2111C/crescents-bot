@@ -429,5 +429,65 @@ class Economy(commands.Cog):
             embed=embed,
             view=ShopView()
         )
+
+    @app_commands.command(
+        name="pay",
+        description="Transfer coins to another user"
+    )
+    async def pay(
+        self,
+        interaction: discord.Interaction,
+        member: discord.Member,
+        amount: int
+    ):
+
+        if member.bot:
+            await interaction.response.send_message(
+                "❌ You cannot send coins to bots.",
+                ephemeral=True
+            )
+            return
+
+        if member.id == interaction.user.id:
+            await interaction.response.send_message(
+                "❌ You cannot send coins to yourself.",
+                ephemeral=True
+            )
+            return
+
+        if amount <= 0:
+            await interaction.response.send_message(
+                "❌ Amount must be greater than 0.",
+                ephemeral=True
+            )
+            return
+
+        sender = await self.get_user(interaction.user.id)
+
+        if sender[1] < amount:
+            await interaction.response.send_message(
+                "❌ You don't have enough coins.",
+                ephemeral=True
+            )
+            return
+
+        await self.get_user(member.id)
+
+        await self.add_coins(interaction.user.id, -amount)
+        await self.add_coins(member.id, amount)
+
+        embed = discord.Embed(
+            title="💸 Coin Transfer",
+            description=(
+                f"{interaction.user.mention} sent "
+                f"**{amount} coins** to {member.mention}"
+            ),
+            color=discord.Color.green()
+        )
+
+        await interaction.response.send_message(
+            embed=embed
+        )
+
 async def setup(bot):
     await bot.add_cog(Economy(bot))
