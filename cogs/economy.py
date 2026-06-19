@@ -489,5 +489,43 @@ class Economy(commands.Cog):
             embed=embed
         )
 
+    @app_commands.command(
+        name="removecoins",
+        description="Remove coins from a user"
+    )
+    async def removecoins(
+        self,
+        interaction: discord.Interaction,
+        member: discord.Member,
+        amount: int
+    ):
+
+        if interaction.user.id != OWNER_ID:
+            await interaction.response.send_message(
+                "❌ Owner only command.",
+                ephemeral=True
+            )
+            return
+
+        if amount <= 0:
+            await interaction.response.send_message(
+                "❌ Amount must be greater than 0.",
+                ephemeral=True
+            )
+            return
+
+        user = await self.get_user(member.id)
+
+        current_coins = user[1]
+
+        if current_coins < amount:
+            amount = current_coins
+
+        await self.add_coins(member.id, -amount)
+
+        await interaction.response.send_message(
+            f"✅ Removed **{amount}** coins from {member.mention}"
+        )
+
 async def setup(bot):
     await bot.add_cog(Economy(bot))
